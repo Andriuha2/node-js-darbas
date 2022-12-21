@@ -8,7 +8,7 @@ const {
   REFRESH_TOKEN,
   GET_ALL_USERS,
   GET_USER,
-  // BUY_TICKET,
+  BUY_TICKET,
   // GET_ALL_WITH_TICKETS,
   // GET_ALL_BY_ID_WITH_TICKETS,
 } = require("../controllers/user");
@@ -23,7 +23,7 @@ router.get("/getAllUsers", auth, GET_ALL_USERS);
 
 router.get("/getUser/:id", auth, GET_USER);
 
-// router.post("/buyTicket", auth, BUY_TICKET);
+router.post("/buyTicket", auth, BUY_TICKET);
 
 // router.get("/getAllUsersWithTickets", auth, GET_ALL_WITH_TICKETS);
 

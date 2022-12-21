@@ -14,6 +14,13 @@ module.exports.CREATE_USER = async (req, res) => {
     money_balance: req.body.money_balance,
   });
 
+  const password = req.body.password;
+  if (!/\d/.test(password)) {
+    return res
+      .status(400)
+      .send({ error: "Password must contain at least one number" });
+  }
+
   const jwt_token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
     expiresIn: "2h",
   });
@@ -34,7 +41,7 @@ module.exports.CREATE_USER = async (req, res) => {
     })
     .catch((err) => {
       console.log("err", err);
-      res.status(400).json({ response: "Fill all fields correctly!" });
+      res.status(400).json({ response: "Check email" });
     });
 };
 
@@ -85,10 +92,10 @@ module.exports.GET_USER = async function (req, res) {
   const data = await UserSchema.aggregate([
     {
       $lookup: {
-        from: "tasks",
-        localField: "taskIds",
-        foreignField: "id",
-        as: "user_tasks",
+        from: "tickets",
+        localField: "ticketIds",
+        foreignField: "_id",
+        as: "bought_tickets",
       },
     },
     { $match: { _id: ObjectId(req.params.id) } },
@@ -139,5 +146,31 @@ module.exports.REFRESH_TOKEN = async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(400).json({ message: "Please log in again" });
+  }
+};
+
+module.exports.BUY_TICKET = async (req, res) => {
+  try {
+    const userId = req.body.user_id;
+    const ticketId = req.body.ticket_id;
+
+    // get the user and ticket documents
+    const user = await User.findById(userId);
+    const ticket = await Ticket.findById(ticketId);
+
+    // check if the user has enough money in their balance
+    if (user.money_balance < ticket.price) {
+      res.status(400).send({ message: "Not enough balance" });
+      return;
+    }
+
+    // update the user's balance and bought tickets
+    user.money_balance -= ticket.price;
+    user.bought_tickets.push(ticketId);
+    await user.save();
+
+    res.send({ message: "Purchase successful" });
+  } catch (error) {
+    res.status(500).send({ message: "Error purchasing ticket" });
   }
 };
